@@ -1,0 +1,36 @@
+from multiprocessing import Process,Queue
+import time,serial
+def run_proc(q,count):
+	print('receive data and the id is %s'%(count))
+	c=[]
+	S=serial.Serial('com3',115200,timeout=0.5)
+	S.flushInput()
+	time.sleep(0.5)
+	data=S.read(5).decode('utf-8')
+	S.close()
+	print(data)
+	c.append(int(data[0:2]))
+	c.append(int(data[2:4]))
+	q.put(c)
+	c=[]
+def data_proc(q):
+	print('data process begin')
+	a=0
+	data=q.get(True)
+	print('data%s'%(data))
+	with open('c:/work/sytnb.txt','a')as f:
+		f.write(str(data))
+	for x in data:
+		a+=x
+	print(a)
+
+if __name__ == '__main__':
+	q=Queue()
+	for i in range(5):
+		p=Process(target=run_proc,args=(q,i))
+		pc=Process(target=data_proc,args=(q,))
+		time.sleep(5)
+		p.start()
+		p.join()
+		pc.start()
+		pc.join()
